@@ -1,0 +1,48 @@
+# backend/pyproject.toml
+# Configuración de herramientas: Ruff, mypy y pytest.
+# Nota: las dependencias se instalan desde requirements.txt. Este archivo
+# centraliza la configuración de calidad de código y pruebas.
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv", "migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "C4", "UP", "SIM"]
+ignore = [
+    "E501",  # longitud de línea gestionada por el formateador
+    "B008",  # FastAPI usa Depends()/File() en valores por defecto
+    "B904",  # raise ... from en endpoints existentes
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "B011"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_unused_ignores = false
+warn_redundant_casts = true
+no_implicit_optional = true
+check_untyped_defs = false
+allow_redefinition = true
+exclude = ["migrations/", ".venv/", "tests/"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
+asyncio_mode = "auto"
+markers = [
+    "e2e: prueba de extremo a extremo (flujo completo)",
+    "playwright: prueba de navegador real (requiere E2E_BASE_URL)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
