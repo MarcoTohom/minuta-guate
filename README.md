@@ -33,18 +33,43 @@ Vitest + React Testing Library.
 
 ## Requisitos
 
-- Windows 10/11
-- Python 3.12 o superior
-- Node.js 18 o superior
+- **Sistema Operativo:** Windows 10/11 (64 bits) o Ubuntu Linux (24.04 LTS / 22.04 LTS)
+- **Python:** 3.12 o superior
+- **Node.js:** 18 o superior (probado con Node 20 LTS y 22 LTS)
+- **npm:** 10 o superior
 
 ## Instalación rápida
+
+### En Ubuntu Linux
+
+> Para la guía extensa con configuración de APT, systemd, Nginx y resolución de problemas, consulte [**docs/installation-ubuntu.md**](docs/installation-ubuntu.md).
+
+```bash
+# 1. Dependencias del sistema (APT)
+sudo apt update && sudo apt install -y python3-pip python3-venv python3-dev build-essential sqlite3 curl git fonts-liberation
+
+# 2. Backend
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+cp ../.env.example .env
+alembic upgrade head
+
+# 3. Frontend
+cd ../frontend
+npm install
+```
+
+### En Windows 10/11
 
 ```powershell
 # Backend
 cd backend
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-copy ..\.env.example ..\.env
+copy ..\.env.example .env
 .\.venv\Scripts\alembic.exe upgrade head
 
 # Frontend
@@ -52,24 +77,48 @@ cd ..\frontend
 npm install
 ```
 
-Detalle completo en [docs/installation.md](docs/installation.md).
+Detalles completos en:
+- [Guía de Instalación en Ubuntu Linux](docs/installation-ubuntu.md)
+- [Guía de Instalación en Windows](docs/installation.md)
 
 ## Ejecución
 
-```powershell
-# Opción A: script de conveniencia (abre backend y frontend)
-.\scripts\dev.ps1
+### Opción A: Scripts automatizados de desarrollo (Backend + Frontend)
 
-# Opción B: manual
-cd backend
-.\.venv\Scripts\uvicorn.exe app.main:app --reload --port 8000
+- **Ubuntu / Linux:**
+  ```bash
+  chmod +x scripts/*.sh
+  ./scripts/dev.sh
+  ```
+- **Windows:**
+  ```powershell
+  .\scripts\dev.ps1
+  ```
 
-cd ..\frontend
-npm run dev
-```
+### Opción B: Ejecución manual en dos terminales
 
-- API: http://localhost:8000 · Documentación: http://localhost:8000/docs
-- Aplicación: http://localhost:5173
+**Terminal 1 — Backend:**
+- Ubuntu / Linux:
+  ```bash
+  cd backend
+  source .venv/bin/activate
+  uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+  ```
+- Windows:
+  ```powershell
+  cd backend
+  .\.venv\Scripts\uvicorn.exe app.main:app --reload --port 8000
+  ```
+
+**Terminal 2 — Frontend:**
+- Ubuntu / Linux y Windows:
+  ```bash
+  cd frontend
+  npm run dev
+  ```
+
+- API: http://localhost:8000 · Documentación Swagger: http://localhost:8000/docs
+- Aplicación Web: http://localhost:5173
 
 ## Credenciales demo
 
@@ -85,10 +134,16 @@ npm run dev
 
 ## Datos sintéticos (seed)
 
-```powershell
-.\scripts\seed.ps1            # carga (idempotente)
-.\scripts\seed.ps1 -Reset      # elimina y recrea todo
-```
+- **Ubuntu / Linux:**
+  ```bash
+  ./scripts/seed.sh            # carga idempotente
+  ./scripts/seed.sh --reset    # elimina y recrea todo
+  ```
+- **Windows:**
+  ```powershell
+  .\scripts\seed.ps1            # carga idempotente
+  .\scripts\seed.ps1 -Reset      # elimina y recrea todo
+  ```
 
 Genera: roles y permisos, 4 usuarios demo, 20 reglas de validación
 configurables, 5 plantillas DOCX con variables, 40 clientes, 100 expedientes,
@@ -98,24 +153,31 @@ mediciones y datos de facturación. Todos los datos son claramente sintéticos
 
 ## Pruebas
 
-```powershell
-.\scripts\test.ps1
-```
+- **Ubuntu / Linux:**
+  ```bash
+  ./scripts/test.sh
+  # Con reporte de cobertura: ./scripts/test.sh --with-coverage
+  ```
+- **Windows:**
+  ```powershell
+  .\scripts\test.ps1
+  ```
 
-O por separado:
+O por separado en Ubuntu / Linux:
 
-```powershell
+```bash
 # Backend
 cd backend
-.\.venv\Scripts\python.exe -m pytest tests\unit tests\integration -q
-.\.venv\Scripts\python.exe -m pytest tests\e2e -q
-.\.venv\Scripts\python.exe -m pytest --cov=app --cov-report=term-missing
-.\.venv\Scripts\ruff.exe check .
-.\.venv\Scripts\ruff.exe format --check .
-.\.venv\Scripts\mypy.exe app
+source .venv/bin/activate
+pytest tests/unit tests/integration -q
+pytest tests/e2e -q
+pytest --cov=app --cov-report=term-missing
+ruff check .
+ruff format --check .
+mypy app
 
 # Frontend
-cd ..\frontend
+cd ../frontend
 npm run lint
 npm run test
 npm run build
@@ -126,12 +188,17 @@ Detalle de escenarios (E2E-001…006 y flujo de tesis) en
 
 ## Respaldo
 
-```powershell
-.\scripts\backup.ps1
-```
+- **Ubuntu / Linux:**
+  ```bash
+  ./scripts/backup.sh
+  ```
+- **Windows:**
+  ```powershell
+  .\scripts\backup.ps1
+  ```
 
-Copia la base SQLite, `uploads\` y `generated\` en
-`data\backups\backup_YYYYMMDD_HHmmss\`.
+Copia la base SQLite, `uploads/` y `generated/` en
+`data/backups/backup_YYYYMMDD_HHmmss/`.
 
 ## Estructura
 
@@ -156,7 +223,7 @@ sistema-borradores-escrituras/
 │   ├── src/               # app, components, features, hooks, lib, pages, services, types
 │   ├── tests/             # Vitest + RTL
 │   └── package.json
-├── scripts/               # dev.ps1, test.ps1, seed.ps1, backup.ps1
+├── scripts/               # Scripts Windows (.ps1), Linux (.sh), systemd y Nginx
 ├── docs/                  # arquitectura, base de datos, API, plantillas, reglas, pruebas, instalación, manual
 ├── data/                  # seeds y datos sintéticos exportados
 ├── .agents/               # reglas y skills para agentes
@@ -173,12 +240,13 @@ sistema-borradores-escrituras/
 - [Plantillas DOCX](docs/templates.md)
 - [Reglas de validación](docs/validation-rules.md)
 - [Pruebas](docs/testing.md)
-- [Instalación](docs/installation.md)
+- [Instalación en Ubuntu Linux](docs/installation-ubuntu.md) (Guía exhaustiva para Ubuntu 24.04/22.04 LTS)
+- [Instalación en Windows](docs/installation.md)
 - [Manual de usuario](docs/user-manual.md)
 
 ## Alcance y limitaciones
 
-- Ejecución **local** en Windows; no requiere nube, OCR, IA ni firma electrónica.
+- Ejecución **local** en Ubuntu Linux (24.04/22.04 LTS) o Windows 10/11; no requiere nube, OCR, IA ni firma electrónica.
 - Contraseñas con **Argon2**; los logs nunca incluyen contraseñas, tokens ni
   documentos de identidad completos.
 - Los DOCX se generan **solo** en el backend; el frontend nunca ejecuta código de

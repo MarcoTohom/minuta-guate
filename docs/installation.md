@@ -1,16 +1,18 @@
 # Instalación
 
-Windows 10/11. No requiere servicios en la nube, OCR, IA ni firma electrónica.
+Windows 10/11 y Ubuntu Linux (24.04 / 22.04 LTS). No requiere servicios en la nube, OCR, IA ni firma electrónica.
+
+> **¿Usuario de Ubuntu Linux?** Consulte la [**Guía completa de instalación y ejecución en Ubuntu Linux**](installation-ubuntu.md) para instrucciones detalladas paso a paso con APT, systemd, Nginx y scripts Bash.
 
 ## Requisitos
 
 | Componente | Versión |
 | --- | --- |
-| Windows | 10/11 (64 bits) |
+| Sistema Operativo | Windows 10/11 (64 bits) o Ubuntu Linux 24.04/22.04 LTS |
 | Python | 3.12 o superior |
-| Node.js | 18 o superior (probado con Node 20/22) |
+| Node.js | 18 o superior (probado con Node 20/22 LTS) |
 | npm | Incluido con Node |
-| Git | Opcional |
+| Git | Recomendado |
 
 ## 1. Backend
 
@@ -99,17 +101,25 @@ npm run preview
 
 Desde la raíz del repositorio:
 
-| Script | Uso |
-| --- | --- |
-| `scripts\dev.ps1` | Arranca backend y frontend en ventanas separadas |
-| `scripts\test.ps1` | Ejecuta todas las suites (backend + frontend + E2E) |
-| `scripts\seed.ps1` | Carga datos sintéticos (opción `-Reset`) |
-| `scripts\backup.ps1` | Respalda base de datos y archivos con fecha |
+| Script (Windows) | Script (Linux / Ubuntu) | Uso |
+| --- | --- | --- |
+| `.\scripts\dev.ps1` | `./scripts/dev.sh` | Arranca backend y frontend en paralelo |
+| `.\scripts\test.ps1` | `./scripts/test.sh` | Ejecuta todas las suites (backend + frontend + E2E) |
+| `.\scripts\seed.ps1` | `./scripts/seed.sh` | Carga datos sintéticos (opción `-Reset` / `--reset`) |
+| `.\scripts\backup.ps1` | `./scripts/backup.sh` | Respalda base de datos y archivos con fecha |
+
+En Ubuntu / Linux, recuerde otorgar permisos de ejecución antes del primer uso: `chmod +x scripts/*.sh`.
 
 ## 4. Respaldo
 
+En Windows:
 ```powershell
 .\scripts\backup.ps1
+```
+
+En Ubuntu Linux:
+```bash
+./scripts/backup.sh
 ```
 
 Crea `data\backups\backup_YYYYMMDD_HHmmss\` con la base SQLite y las carpetas
