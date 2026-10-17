@@ -76,8 +76,17 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 
 | Método | Ruta | Permiso |
 | --- | --- | --- |
-| GET | `/deed-types` | autenticado |
+| GET | `/deed-types` | autenticado (query `include_inactive` opcional) |
+| POST | `/deed-types` | `deed_types.create` |
+| PATCH | `/deed-types/{id}` | `deed_types.update` |
 | GET | `/field-types` | autenticado |
+
+## Reglas de validación
+
+| Método | Ruta | Permiso |
+| --- | --- | --- |
+| GET | `/validation-rules` | `rules.read` (query `deed_type_code` opcional) |
+| PATCH | `/validation-rules/{rule_id}` | `rules.update` |
 
 ## Plantillas
 
@@ -160,7 +169,8 @@ Flujo: **create → preview → process → confirm**.
 
 | Rol | Resumen |
 | --- | --- |
-| `ADMINISTRADOR` | Todos los permisos |
+| `ADMINISTRADOR` | Todos los permisos (`rules.read`, `rules.update`, `deed_types.create`, `deed_types.update` incluidos) |
 | `ABOGADO_NOTARIO` | Clientes, expedientes, plantillas, documentos (incluye `documents.generate`), validaciones, facturación, reportes |
 | `AUXILIAR` | Registro y edición; **no** genera DOCX ni administra usuarios |
+| `ADMINISTRACION` | Facturación (cotizaciones, presupuestos, cobros, pagos) y reportes; solo lectura de clientes/expedientes/documentos |
 | `ADMINISTRACION` | Facturación (cotizaciones, presupuestos, cobros, pagos) y reportes; solo lectura de clientes/expedientes/documentos |

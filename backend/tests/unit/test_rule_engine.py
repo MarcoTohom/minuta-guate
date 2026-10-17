@@ -135,11 +135,15 @@ class TestRegistralRules:
 
 class TestIncisosRules:
     def test_rule014_missing_incisos(self):
-        assert rule_ids(run({"incisos": []}, "COMPRAVENTA_INMUEBLE", ["RULE-014"])) == {"RULE-014"}
+        assert rule_ids(run({"incisos": []}, "CONSTITUCION_SOCIEDAD", ["RULE-014"])) == {"RULE-014"}
 
     def test_rule015_duplicate_incisos(self):
         data = {"incisos": [{"numero": "a"}, {"numero": "a"}]}
-        assert rule_ids(run(data, "COMPRAVENTA_INMUEBLE", ["RULE-015"])) == {"RULE-015"}
+        assert rule_ids(run(data, "CONSTITUCION_SOCIEDAD", ["RULE-015"])) == {"RULE-015"}
+
+    def test_inciso_rules_do_not_affect_compraventa(self):
+        # Una compraventa no tiene incisos: las reglas de incisos no aplican.
+        assert run({"incisos": []}, "COMPRAVENTA_INMUEBLE", ["RULE-014", "RULE-015"]) == []
 
     def test_rule016_bad_numbering(self):
         assert rule_ids(
@@ -176,3 +180,90 @@ class TestFullRun:
         ctx = ValidationContext(data={}, deed_type_code="COMPRAVENTA_INMUEBLE")
         issues = RuleEngine().validate(ctx)
         assert isinstance(issues, list)
+
+
+class TestDeedTypeIsolation:
+    """Las reglas de un tipo de escritura no deben afectar a otros tipos."""
+
+    COMPRADOR_DATA = {
+        "comprador_dpi": "1234567890101",
+        "expediente_comprador_dpi": "1234567890109",
+        "comprador_nit": "12345678-9",
+        "expediente_comprador_nit": "87654321-0",
+        "comprador_nombre": "José Pérez",
+        "expediente_comprador_nombre": "Juan López",
+        "subtotal": "1000.00",
+        "total": "999999.00",
+        "departamento": "Marte",
+    }
+    REGISTRAL_DATA = {"finca": "", "folio": "", "libro": ""}
+
+    def test_compraventa_consistency_rules_do_not_apply_to_donacion(self):
+        issues = run(
+            self.COMPRADOR_DATA,
+            "DONACION_ENTRE_VIVOS",
+            ["RULE-004", "RULE-005", "RULE-006", "RULE-008", "RULE-012"],
+        )
+        assert issues == []
+
+    def test_compraventa_consistency_rules_do_not_apply_to_constitucion(self):
+        issues = run(
+            self.COMPRADOR_DATA,
+            "CONSTITUCION_SOCIEDAD",
+            ["RULE-004", "RULE-005", "RULE-006", "RULE-008", "RULE-012"],
+        )
+        assert issues == []
+
+    def test_compraventa_consistency_rules_apply_to_compraventa(self):
+        issues = run(self.COMPRADOR_DATA, "COMPRAVENTA_INMUEBLE")
+        assert {"RULE-004", "RULE-005", "RULE-006", "RULE-008", "RULE-012"} <= rule_ids(issues)
+
+    def test_registral_rules_apply_to_inmueble_types(self):
+        assert rule_ids(run(self.REGISTRAL_DATA, "COMPRAVENTA_INMUEBLE")) >= {
+            "RULE-009",
+            "RULE-010",
+            "RULE-011",
+        }
+        assert rule_ids(run(self.REGISTRAL_DATA, "DONACION_ENTRE_VIVOS")) >= {
+            "RULE-009",
+            "RULE-010",
+            "RULE-011",
+        }
+
+    def test_registral_rules_do_not_apply_to_arrendamiento(self):
+        assert run(self.REGISTRAL_DATA, "ARRENDAMIENTO", ["RULE-009", "RULE-010", "RULE-011"]) == []
+
+    def test_registral_rules_do_not_apply_to_constitucion(self):
+        assert (
+            run(self.REGISTRAL_DATA, "CONSTITUCION_SOCIEDAD", ["RULE-009", "RULE-010", "RULE-011"])
+            == []
+        )
+
+    def test_arrendamiento_date_rule_does_not_apply_to_compraventa(self):
+        data = {"fecha_inicio": "2026-06-01", "fecha_fin": "2024-01-01"}
+        assert run(data, "COMPRAVENTA_INMUEBLE", ["RULE-007"]) == []
+        assert rule_ids(run(data, "ARRENDAMIENTO", ["RULE-007"])) == {"RULE-007"}
+
+    def test_aportes_rule_does_not_apply_to_donacion(self):
+        data = {"capital_inicial": "9000.00", "aportes": [{"monto": 1000}]}
+        assert run(data, "DONACION_ENTRE_VIVOS", ["RULE-018"]) == []
+
+    def test_scope_override_can_widen_a_rule(self):
+        # El administrador puede extender RULE-009 a arrendamiento.
+        scopes = {"RULE-009": ["ARRENDAMIENTO"]}
+        ctx = ValidationContext(data={"finca": ""}, deed_type_code="ARRENDAMIENTO")
+        issues = RuleEngine().validate(ctx, active_rules=["RULE-009"], scopes=scopes)
+        assert rule_ids(issues) == {"RULE-009"}
+
+    def test_scope_override_empty_means_all_types(self):
+        scopes = {"RULE-009": None}
+        ctx = ValidationContext(data={"finca": ""}, deed_type_code="ARRENDAMIENTO")
+        issues = RuleEngine().validate(ctx, active_rules=["RULE-009"], scopes=scopes)
+        assert rule_ids(issues) == {"RULE-009"}
+
+    def test_rule_applies_defaults(self):
+        from app.rules.catalog import rule_applies
+
+        assert rule_applies("RULE-009", "COMPRAVENTA_INMUEBLE")
+        assert not rule_applies("RULE-009", "ARRENDAMIENTO")
+        assert rule_applies("RULE-001", "CUALQUIER_TIPO")

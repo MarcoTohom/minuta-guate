@@ -80,4 +80,8 @@ export const PERMISSIONS = {
   paymentsCreate: 'payments.create',
   reportsRead: 'reports.read',
   auditRead: 'audit.read',
+  rulesRead: 'rules.read',
+  rulesUpdate: 'rules.update',
+  deedTypesCreate: 'deed_types.create',
+  deedTypesUpdate: 'deed_types.update',
 } as const;

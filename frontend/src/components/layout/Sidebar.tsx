@@ -10,6 +10,7 @@ import {
   Receipt,
   Settings,
   Shield,
+  SlidersHorizontal,
   Upload,
   Users,
   Wallet,
@@ -38,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/payments', label: 'Pagos', icon: CreditCard, permission: 'payments.read' },
   { to: '/reports', label: 'Reportes', icon: BarChart3, permission: 'reports.read' },
   { to: '/users', label: 'Usuarios', icon: Shield, permission: 'users.read' },
+  { to: '/rules', label: 'Reglas y tipos', icon: SlidersHorizontal, permission: 'rules.read' },
   { to: '/settings', label: 'Configuración', icon: Settings },
 ];
 

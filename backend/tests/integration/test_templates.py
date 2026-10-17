@@ -95,6 +95,22 @@ class TestVersioning:
         )
         assert response.status_code == 400
 
+    def test_upload_rejects_malformed_jinja(self, client, auth):
+        template = create_template(client, auth["notario"])
+        response = upload_version(
+            client,
+            auth["notario"],
+            template["id"],
+            paragraphs=["a los {{ fecha_escritura }, hoy"],
+        )
+        assert response.status_code == 422, response.text
+        assert "mal formados" in response.json()["detail"]
+        # No se debe crear ninguna versión.
+        versions = client.get(
+            f"/api/v1/templates/{template['id']}/versions", headers=auth["notario"]
+        ).json()
+        assert versions == []
+
     def test_activate_version(self, client, auth):
         template = create_template(client, auth["notario"])
         version = upload_version(client, auth["notario"], template["id"]).json()

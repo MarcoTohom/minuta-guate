@@ -5,6 +5,19 @@ export interface DeedType {
   code: string;
   name: string;
   description?: string | null;
+  active?: boolean;
+}
+
+export interface DeedTypeCreate {
+  code: string;
+  name: string;
+  description?: string | null;
+}
+
+export interface DeedTypeUpdate {
+  name?: string;
+  description?: string | null;
+  active?: boolean;
 }
 
 export interface Case {

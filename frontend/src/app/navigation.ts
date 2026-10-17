@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Receipt,
   Settings,
+  SlidersHorizontal,
   Upload,
   UserCog,
   Users,
@@ -37,5 +38,6 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/payments', label: 'Pagos', icon: Wallet, permission: PERMISSIONS.paymentsRead },
   { to: '/reports', label: 'Reportes', icon: BarChart3, permission: PERMISSIONS.reportsRead },
   { to: '/users', label: 'Usuarios', icon: UserCog, permission: PERMISSIONS.usersRead },
+  { to: '/rules', label: 'Reglas y tipos', icon: SlidersHorizontal, permission: PERMISSIONS.rulesRead },
   { to: '/settings', label: 'Configuración', icon: Settings },
 ];

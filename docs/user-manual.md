@@ -102,11 +102,23 @@ Menú **Importaciones** → **Nueva**:
 - **Reportes / experimento**: tiempos y errores por método (tradicional vs.
   sistema) para la tesis.
 
+## Reglas y tipos de escritura (solo administrador)
+
+El menú **Reglas y tipos** (`/rules`) permite ajustar el motor de validación sin
+tocar código:
+
+- **Reglas de validación**: active o desactive reglas, cambie su severidad
+  (`CRITICAL`/`ERROR`/`WARNING`/`INFO`) y defina a qué tipos de escritura aplican.
+  Una regla de compraventa, por ejemplo, no afecta a una constitución de sociedad.
+- **Tipos de escritura**: cree y edite tipos (nombre, descripción, estado activo).
+
+Los cambios se aplican en la siguiente validación de cada borrador.
+
 ## Roles y permisos
 
 | Rol | Puede |
 | --- | --- |
-| Administrador | Todo, incluida la gestión de usuarios y la auditoría |
+| Administrador | Todo, incluida la gestión de usuarios, reglas de validación, tipos de escritura y la auditoría |
 | Abogado / Notario | Clientes, expedientes, plantillas, documentos (incl. generar), validaciones, facturación |
 | Auxiliar | Registro y edición; **no** genera DOCX ni administra usuarios |
 | Administración | Facturación y reportes; lectura de clientes/expedientes/documentos |

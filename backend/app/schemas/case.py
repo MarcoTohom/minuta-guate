@@ -27,6 +27,19 @@ class DeedTypeOut(BaseModel):
     code: str
     name: str
     description: str | None = None
+    active: bool = True
+
+
+class DeedTypeCreate(BaseModel):
+    code: str
+    name: str
+    description: str | None = None
+
+
+class DeedTypeUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
 
 
 class CaseOut(BaseModel):

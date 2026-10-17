@@ -6,6 +6,7 @@ from __future__ import annotations
 from sqlalchemy.orm import Session
 
 from app.models.document import Document, ValidationResult
+from app.models.template import ValidationRule
 from app.models.user import User
 from app.rules.rule_engine import RuleEngine, ValidationContext
 from app.services.audit_service import AuditAction, AuditService
@@ -16,6 +17,25 @@ class ValidationService:
         self.db = db
         self._engine = RuleEngine()
         self._audit = AuditService(db)
+
+    def _load_rule_config(
+        self,
+    ) -> tuple[list[str] | None, dict[str, list | None], dict[str, str]]:
+        """Lee la configuración de reglas administrable desde la base de datos.
+
+        Devuelve `(active_rules, scopes, severity_overrides)`. Si todavía no hay
+        reglas configuradas, se devuelven valores neutros para usar los
+        valores por defecto del catálogo.
+        """
+
+        rows = self.db.query(ValidationRule).all()
+        if not rows:
+            return None, {}, {}
+
+        active_rules = [row.rule_id for row in rows if row.active]
+        scopes: dict[str, list | None] = {row.rule_id: row.deed_type_codes for row in rows}
+        severity_overrides = {row.rule_id: row.severity for row in rows}
+        return active_rules, scopes, severity_overrides
 
     def validate_document(
         self, document: Document, user: User | None = None
@@ -36,7 +56,15 @@ class ValidationService:
             document_id=document.id,
         )
 
-        issues = self._engine.validate(ctx)
+        active_rules, scopes, severity_overrides = self._load_rule_config()
+        issues = self._engine.validate(ctx, active_rules=active_rules, scopes=scopes)
+
+        # La severidad administrable reemplaza a la severidad por defecto.
+        for issue in issues:
+            override = severity_overrides.get(issue.rule_id)
+            if override:
+                issue.severity = override
+
         results: list[ValidationResult] = []
 
         for issue in issues:

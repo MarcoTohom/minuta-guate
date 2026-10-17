@@ -24,6 +24,7 @@ export const queryKeys = {
   cases: (params?: unknown) => ['cases', params ?? {}] as const,
   case: (id: string) => ['cases', id] as const,
   deedTypes: ['deed-types'] as const,
+  allDeedTypes: ['deed-types', 'all'] as const,
   fieldTypes: ['field-types'] as const,
   templates: (params?: unknown) => ['templates', params ?? {}] as const,
   template: (id: string) => ['templates', id] as const,
@@ -48,4 +49,5 @@ export const queryKeys = {
   dashboard: ['dashboard'] as const,
   experimentalReport: ['reports', 'experimental'] as const,
   audit: (params?: unknown) => ['audit', params ?? {}] as const,
+  validationRules: (params?: unknown) => ['validation-rules', params ?? {}] as const,
 };

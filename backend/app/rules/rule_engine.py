@@ -4,8 +4,11 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
+
+from app.rules.catalog import rule_applies
 
 
 @dataclass
@@ -47,15 +50,14 @@ class RuleEngine:
 
     # Expresiones regulares para Guatemala
     DPI_PATTERN = re.compile(r"^\d{13}$")
-    NIT_PATTERN = re.compile(r"^\d{1,8}-?\d{1}$|^CF$", re.IGNORECASE)
+    NIT_PATTERN = re.compile(r"^\d{1,8}-?[0-9K]$|^CF$", re.IGNORECASE)
     PHONE_PATTERN = re.compile(r"^\+?[\d\s\-\(\)]{8,15}$")
     TEMPLATE_VAR_PATTERN = re.compile(r"\{\{.*?\}\}")
 
-    def validate(
-        self, ctx: ValidationContext, active_rules: list[str] | None = None
-    ) -> list[ValidationIssue]:
-        """Ejecuta todas las reglas activas contra el contexto."""
-        rules = {
+    def __init__(self) -> None:
+        # Cada regla se asocia a su implementación. El alcance por tipo de
+        # escritura se resuelve con `app/rules/catalog.py`.
+        self._rules: dict[str, object] = {
             "RULE-001": self._rule_required_field,
             "RULE-002": self._rule_dpi_format,
             "RULE-003": self._rule_nit_format,
@@ -78,11 +80,28 @@ class RuleEngine:
             "RULE-020": self._rule_duplicate_record,
         }
 
-        to_run = active_rules or list(rules.keys())
-        for rule_id in to_run:
-            fn = rules.get(rule_id)
-            if fn:
-                fn(ctx)
+    def validate(
+        self,
+        ctx: ValidationContext,
+        active_rules: list[str] | None = None,
+        scopes: Mapping[str, Sequence[str] | None] | None = None,
+    ) -> list[ValidationIssue]:
+        """Ejecuta las reglas activas que aplican al tipo de escritura.
+
+        - `active_rules`: subconjunto de reglas a evaluar (``None`` = todas).
+        - `scopes`: alcance efectivo por regla. Si una regla aparece en el
+          mapeo, ese valor reemplaza al alcance por defecto del catálogo; si no
+          aparece, se usa el alcance del catálogo.
+        """
+
+        candidates = active_rules if active_rules is not None else list(self._rules)
+        for rule_id in candidates:
+            fn = self._rules.get(rule_id)
+            if fn is None:
+                continue
+            if not rule_applies(rule_id, ctx.deed_type_code, scopes):
+                continue
+            fn(ctx)  # type: ignore[operator]
 
         return ctx.issues
 
@@ -289,49 +308,46 @@ class RuleEngine:
     # RULE-009: finca
     # ------------------------------------------------------------------
     def _rule_finca(self, ctx: ValidationContext) -> None:
-        if ctx.deed_type_code in ("COMPRAVENTA_INMUEBLE", "DONACION_ENTRE_VIVOS"):
-            val = ctx.get_value("finca")
-            if not val or not val.strip():
-                ctx.add_issue(
-                    ValidationIssue(
-                        rule_id="RULE-009",
-                        severity="ERROR",
-                        field_key="finca",
-                        message="El número de finca es requerido para este tipo de escritura.",
-                    )
+        val = ctx.get_value("finca")
+        if not val or not val.strip():
+            ctx.add_issue(
+                ValidationIssue(
+                    rule_id="RULE-009",
+                    severity="ERROR",
+                    field_key="finca",
+                    message="El número de finca es requerido para este tipo de escritura.",
                 )
+            )
 
     # ------------------------------------------------------------------
     # RULE-010: folio
     # ------------------------------------------------------------------
     def _rule_folio(self, ctx: ValidationContext) -> None:
-        if ctx.deed_type_code in ("COMPRAVENTA_INMUEBLE", "DONACION_ENTRE_VIVOS"):
-            val = ctx.get_value("folio")
-            if not val or not val.strip():
-                ctx.add_issue(
-                    ValidationIssue(
-                        rule_id="RULE-010",
-                        severity="ERROR",
-                        field_key="folio",
-                        message="El folio es requerido para este tipo de escritura.",
-                    )
+        val = ctx.get_value("folio")
+        if not val or not val.strip():
+            ctx.add_issue(
+                ValidationIssue(
+                    rule_id="RULE-010",
+                    severity="ERROR",
+                    field_key="folio",
+                    message="El folio es requerido para este tipo de escritura.",
                 )
+            )
 
     # ------------------------------------------------------------------
     # RULE-011: libro
     # ------------------------------------------------------------------
     def _rule_libro(self, ctx: ValidationContext) -> None:
-        if ctx.deed_type_code in ("COMPRAVENTA_INMUEBLE", "DONACION_ENTRE_VIVOS"):
-            val = ctx.get_value("libro")
-            if not val or not val.strip():
-                ctx.add_issue(
-                    ValidationIssue(
-                        rule_id="RULE-011",
-                        severity="ERROR",
-                        field_key="libro",
-                        message="El libro es requerido para este tipo de escritura.",
-                    )
+        val = ctx.get_value("libro")
+        if not val or not val.strip():
+            ctx.add_issue(
+                ValidationIssue(
+                    rule_id="RULE-011",
+                    severity="ERROR",
+                    field_key="libro",
+                    message="El libro es requerido para este tipo de escritura.",
                 )
+            )
 
     # ------------------------------------------------------------------
     # RULE-012: departamento
@@ -379,7 +395,7 @@ class RuleEngine:
     # ------------------------------------------------------------------
     def _rule_municipio(self, ctx: ValidationContext) -> None:
         municipio = ctx.get_value("municipio")
-        if municipio and not municipio.strip():
+        if municipio is not None and not municipio.strip():
             ctx.add_issue(
                 ValidationIssue(
                     rule_id="RULE-013",

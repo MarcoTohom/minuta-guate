@@ -10,6 +10,7 @@ from pathlib import Path
 from docx import Document as DocxDocument
 from docx.document import Document as DocxDocumentType
 from docxtpl import DocxTemplate
+from jinja2.exceptions import TemplateSyntaxError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -60,6 +61,8 @@ class DocumentGenerationService:
             tpl = DocxTemplate(template_path)
             tpl.render(context)
             tpl.save(str(output_path))
+        except TemplateSyntaxError as e:
+            raise DocumentGenerationError(self._syntax_message(e)) from e
         except Exception as e:
             raise DocumentGenerationError(f"Error al renderizar plantilla: {e}") from e
 
@@ -103,6 +106,22 @@ class DocumentGenerationService:
             detail=f"version={version_number} file={safe_name}",
         )
         return dv
+
+    @staticmethod
+    def _syntax_message(exc: TemplateSyntaxError) -> str:
+        """Mensaje claro para un marcador Jinja2 mal formado en la plantilla.
+
+        docxtpl adjunta ``docx_context`` con las líneas de plantilla cercanas al
+        error (sin etiquetas XML); se usan para señalar el lugar aproximado.
+        """
+        message = f"La plantilla tiene un marcador Jinja2 mal formado: {exc.message}."
+        context = getattr(exc, "docx_context", None)
+        if context:
+            snippet = " ".join(" ".join(context).split())
+            if snippet:
+                message += f' Cerca de: "...{snippet[:300]}...".'
+        message += " Corrija los marcadores '{{ variable }}' en el DOCX y vuelva a subirlo."
+        return message
 
     def _find_unresolved(self, doc: DocxDocumentType) -> list[str]:
         """Busca variables {{ }} sin sustituir en el DOCX."""

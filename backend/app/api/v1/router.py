@@ -18,6 +18,7 @@ from app.api.v1.endpoints import (
     quotes,
     templates,
     users,
+    validation_rules,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -29,6 +30,7 @@ api_router.include_router(clients.router)
 api_router.include_router(cases.router)
 api_router.include_router(deed_types.router)
 api_router.include_router(deed_types.field_types_router)
+api_router.include_router(validation_rules.router)
 api_router.include_router(templates.router)
 api_router.include_router(templates.fields_router)
 api_router.include_router(imports.router)

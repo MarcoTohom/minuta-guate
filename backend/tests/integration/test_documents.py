@@ -7,6 +7,7 @@ from pathlib import Path
 
 from docx import Document as DocxDocument
 
+from app.models.template import TemplateVersion
 from tests.conftest import make_docx
 
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -233,6 +234,26 @@ class TestGeneration:
         client.post(f"/api/v1/documents/{document_id}/validate", headers=auth["notario"])
         response = client.post(f"/api/v1/documents/{document_id}/generate", headers=auth["notario"])
         assert response.status_code == 422
+
+    def test_generation_reports_malformed_template(self, client, auth, db, tmp_path):
+        ctx = setup_comparaventa(client, auth["notario"])
+        # Simula una plantilla subida antes de la validación de sintaxis:
+        # se reemplaza el archivo de la versión por uno con un marcador roto.
+        version = db.get(TemplateVersion, ctx["template_version_id"])
+        bad = tmp_path / "mala.docx"
+        bad.write_bytes(make_docx(["a los {{ fecha_escritura }, hoy"]))
+        version.file_path = str(bad)
+        db.commit()
+
+        document_id = create_document(
+            client, auth["notario"], ctx["case_id"], ctx["template_version_id"], VALID_COMPRAVENTA
+        ).json()["id"]
+        client.post(f"/api/v1/documents/{document_id}/validate", headers=auth["notario"])
+        response = client.post(f"/api/v1/documents/{document_id}/generate", headers=auth["notario"])
+        assert response.status_code == 422, response.text
+        detail = response.json()["detail"]
+        assert "mal formado" in detail
+        assert "{{ variable }}" in detail
 
     def test_versions_are_not_overwritten(self, client, auth):
         ctx = setup_comparaventa(client, auth["notario"])

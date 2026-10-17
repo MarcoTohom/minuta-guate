@@ -19,7 +19,8 @@ Prohibido ejecutar código Python arbitrario.
 1. Redacta el DOCX en Word con las variables anteriores.
 2. `POST /templates` para crear el registro.
 3. `POST /templates/{id}/versions` (multipart, `file`) para subir la versión.
-   El backend valida la firma `PK` (DOCX).
+   El backend valida la firma `PK` (DOCX) y la **sintaxis Jinja2** (compila sin
+   renderizar); un marcador mal formado se rechaza con 422.
 4. `GET /templates/{id}/analysis` para ver variables y sugerencias de tipo.
 5. `POST /templates/{id}/versions/{version_id}/fields` o
    `POST /template-fields?template_version_id=…` para definir campos.

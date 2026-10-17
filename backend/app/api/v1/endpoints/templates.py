@@ -123,6 +123,17 @@ async def upload_version(
 
     svc = TemplateService(db)
     file_path = svc.save_uploaded_docx(content, file.filename or "plantilla.docx")
+    syntax_error = svc.validate_docx_syntax(file_path)
+    if syntax_error:
+        Path(file_path).unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "La plantilla tiene marcadores Jinja2 mal formados: "
+                f"{syntax_error}. Verifique que cada variable abra y cierre con "
+                "dobles llaves (por ejemplo '{{ variable }}')."
+            ),
+        )
     version = svc.create_version(
         template, file_path, file.filename or "plantilla.docx", notes=notes, user=current_user
     )

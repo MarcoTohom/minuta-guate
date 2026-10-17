@@ -132,6 +132,27 @@ npm run test
 npm run build
 ```
 
+## Inicio automático en Windows
+
+Para iniciar backend y frontend automáticamente al arrancar Windows, abra
+PowerShell como Administrador y ejecute desde la raíz del proyecto:
+
+```powershell
+.\scripts\install-windows-startup.ps1
+Start-ScheduledTask -TaskName "Sistema Borradores Escrituras"
+Get-ScheduledTask -TaskName "Sistema Borradores Escrituras"
+```
+
+La tarea usa la cuenta `SYSTEM`, no abre ventanas y reinicia el proceso si
+falla. Las salidas quedan en `logs\backend.log`, `logs\backend-error.log`,
+`logs\frontend.log` y `logs\frontend-error.log`.
+
+Para quitar el inicio automático:
+
+```powershell
+.\scripts\uninstall-windows-startup.ps1
+```
+
 ## Solución de problemas
 
 | Síntoma | Causa probable | Solución |

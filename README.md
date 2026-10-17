@@ -90,10 +90,11 @@ npm run dev
 .\scripts\seed.ps1 -Reset      # elimina y recrea todo
 ```
 
-Genera: roles y permisos, 4 usuarios demo, 5 plantillas DOCX con variables, 40
-clientes, 100 expedientes, 100 documentos, 100 casos de prueba con
-inconsistencias controladas, 200 mediciones y datos de facturación. Todos los
-datos son claramente sintéticos (`@example.local`).
+Genera: roles y permisos, 4 usuarios demo, 20 reglas de validación
+configurables, 5 plantillas DOCX con variables, 40 clientes, 100 expedientes,
+100 documentos, 100 casos de prueba con inconsistencias controladas, 200
+mediciones y datos de facturación. Todos los datos son claramente sintéticos
+(`@example.local`).
 
 ## Pruebas
 

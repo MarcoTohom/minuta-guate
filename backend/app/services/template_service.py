@@ -8,6 +8,8 @@ import uuid
 from pathlib import Path
 
 from docx import Document as DocxDocument
+from docxtpl import DocxTemplate
+from jinja2.exceptions import TemplateSyntaxError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -66,6 +68,24 @@ class TemplateService:
         except Exception:
             pass
         return sorted(variables)
+
+    def validate_docx_syntax(self, docx_path: str) -> str | None:
+        """Comprueba que los marcadores Jinja2 de la plantilla sean válidos.
+
+        Reutiliza el compilador de docxtpl (``get_undeclared_template_variables``)
+        sobre el cuerpo y los encabezados/pies sin renderizar con datos, por lo
+        que detecta delimitadores ``{{ }}`` / ``{% %}`` mal formados sin ejecutar
+        nada. Devuelve el mensaje de error o ``None`` si la sintaxis es correcta.
+        """
+        try:
+            DocxTemplate(docx_path).get_undeclared_template_variables()
+        except TemplateSyntaxError as exc:
+            return exc.message
+        except Exception:
+            # Un archivo ilegible se valida en otro punto del flujo; aquí solo
+            # interesa la sintaxis de las variables.
+            return None
+        return None
 
     def save_uploaded_docx(self, content: bytes, original_name: str) -> str:
         """Guarda el DOCX con nombre interno seguro. Devuelve la ruta."""

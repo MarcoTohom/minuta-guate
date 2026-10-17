@@ -6,6 +6,10 @@
 - Condicionales: `{% if variable %}…{% endif %}`.
 - Iteraciones: `{% for item in lista %}{{ item.campo }}{% endfor %}`.
 - Marcadores asistidos reconocidos: `[[ variable ]]`, secuencias de `_` o `-`.
+- Al subir una versión, el backend valida la sintaxis Jinja2 (compila el
+  cuerpo y los encabezados/pies **sin** renderizar). Un marcador mal formado
+  (por ejemplo `{{ variable }` con una sola llave) se rechaza con **422** y un
+  mensaje que señala el error.
 
 ## Prohibiciones
 

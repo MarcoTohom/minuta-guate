@@ -6,6 +6,8 @@ import type {
   CaseListParams,
   CaseUpdate,
   DeedType,
+  DeedTypeCreate,
+  DeedTypeUpdate,
   Paginated,
 } from '@/types';
 
@@ -39,5 +41,22 @@ export async function addParty(
 
 export async function listDeedTypes(): Promise<DeedType[]> {
   const { data } = await apiClient.get<DeedType[]>('/deed-types');
+  return data;
+}
+
+export async function listAllDeedTypes(): Promise<DeedType[]> {
+  const { data } = await apiClient.get<DeedType[]>('/deed-types', {
+    params: { include_inactive: true },
+  });
+  return data;
+}
+
+export async function createDeedType(payload: DeedTypeCreate): Promise<DeedType> {
+  const { data } = await apiClient.post<DeedType>('/deed-types', payload);
+  return data;
+}
+
+export async function updateDeedType(id: string, payload: DeedTypeUpdate): Promise<DeedType> {
+  const { data } = await apiClient.patch<DeedType>(`/deed-types/${id}`, payload);
   return data;
 }

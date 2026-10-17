@@ -59,8 +59,10 @@ from app.models import (  # noqa: F401
     TestExecution,
     User,
     ValidationResult,
+    ValidationRule,
 )
 from app.models.measurement import TimeMeasurement
+from app.rules.catalog import rule_applies
 from app.utils.files import ensure_storage_dirs
 
 fake = Faker("es_ES")
@@ -109,6 +111,10 @@ PERMISSIONS: list[tuple[str, str, str]] = [
     ("payments.create", "payments", "Registrar pagos"),
     ("reports.read", "reports", "Ver reportes y dashboard"),
     ("audit.read", "audit", "Ver auditoría"),
+    ("rules.read", "rules", "Ver reglas de validación"),
+    ("rules.update", "rules", "Editar reglas de validación"),
+    ("deed_types.create", "deed_types", "Crear tipos de escritura"),
+    ("deed_types.update", "deed_types", "Editar tipos de escritura"),
 ]
 
 ROLE_DEFS: dict[str, list[str]] = {
@@ -475,6 +481,19 @@ def seed_reference_data(db: Session) -> dict[str, Any]:
     return {"roles": roles, "permissions": permissions, "deed_types": deed_types}
 
 
+def seed_validation_rules(db: Session) -> None:
+    """Crea las reglas de validación administrables a partir del catálogo.
+
+    Es idempotente: solo inserta las reglas que falten, respetando cualquier
+    personalización previa del administrador.
+    """
+
+    from app.services.rule_service import RuleService
+
+    RuleService(db).ensure_rules()
+    db.flush()
+
+
 def seed_users(db: Session, roles: dict) -> dict[str, User]:
     demo = [
         ("admin", "admin@example.local", "Administrador Demo", "Admin123!", "ADMINISTRADOR"),
@@ -749,66 +768,94 @@ def build_field_data(code: str, db: Session, clients: list[Client], numero: int)
                 "representante_legal": a.nombre_completo,
                 "accionistas": aportes,
                 "aportes": aportes,
+                "incisos": [
+                    {"numero": "a", "texto": "Constituir la sociedad anónima."},
+                    {"numero": "b", "texto": "Aprobar el capital social y su distribución."},
+                    {"numero": "c", "texto": "Nombrar al representante legal."},
+                ],
             }
         )
     return common
 
 
+def _expected(kinds: list[str], code: str) -> int:
+    """Cuenta las reglas aplicables al tipo de escritura para las inconsistencias."""
+
+    return sum(1 for rule_id in kinds if rule_applies(rule_id, code))
+
+
 def apply_inconsistency(code: str, data: dict, kind: str) -> int:
-    """Introduce una inconsistencia controlada. Devuelve la cantidad esperada de errores."""
+    """Introduce una inconsistencia controlada. Devuelve la cantidad esperada de errores.
+
+    Solo se mutan los datos (y se cuenta el error) cuando la regla que detecta
+    la inconsistencia aplica al tipo de escritura. Así, por ejemplo, una
+    inconsistencia de incisos no afecta a una compraventa.
+    """
+
     if kind == "VALIDEZ_PLENA":
         return 0
     if kind == "DPI_INCONSISTENTE":
+        if not rule_applies("RULE-004", code):
+            return 0
         data["comprador_dpi"] = synthetic_dpi()
         data["expediente_comprador_dpi"] = synthetic_dpi()
-        return 2
+        return _expected(["RULE-004"], code)
     if kind == "NIT_INCONSISTENTE":
+        if not rule_applies("RULE-005", code):
+            return 0
         data["comprador_nit"] = synthetic_nit()
         data["expediente_comprador_nit"] = synthetic_nit()
-        return 1
+        return _expected(["RULE-005"], code)
     if kind == "NOMBRE_INCONSISTENTE":
+        if not rule_applies("RULE-006", code):
+            return 0
         data["comprador_nombre"] = "Nombre Sintético Modificado"
         data["expediente_comprador_nombre"] = synthetic_name()
-        return 1
+        return _expected(["RULE-006"], code)
     if kind == "FECHA_INCONSISTENTE":
         if code == "ARRENDAMIENTO":
             data["fecha_fin"] = "2024-01-01"
             data["fecha_inicio"] = "2026-01-01"
-        else:
-            data["fecha_escritura"] = "fecha-invalida"
-        return 1
+            return _expected(["RULE-007"], code)
+        # Solo la inconsistencia de fechas del arrendamiento tiene regla propia.
+        return 0
     if kind == "MONTO_INCONSISTENTE":
+        if not rule_applies("RULE-008", code):
+            return 0
         data["subtotal"] = "1000.00"
         data["total"] = "999999.00"
-        return 1
+        return _expected(["RULE-008"], code)
     if kind == "REGISTRAL_INCONSISTENTE":
+        if not rule_applies("RULE-009", code):
+            return 0
         data["finca"] = ""
         data["folio"] = ""
-        return 2
+        return _expected(["RULE-009", "RULE-010"], code)
     if kind == "INCISO_FALTANTE":
+        if not rule_applies("RULE-014", code):
+            return 0
         data["incisos"] = []
-        return 1
+        return _expected(["RULE-014"], code)
     if kind == "INCISO_DUPLICADO":
+        if not rule_applies("RULE-015", code):
+            return 0
         data["incisos"] = [
             {"numero": "a", "texto": "Inciso uno"},
             {"numero": "a", "texto": "Inciso duplicado"},
         ]
-        return 1
+        return _expected(["RULE-015"], code)
     if kind == "CAMPO_OBLIGATORIO_VACIO":
         if code == "COMPRAVENTA_INMUEBLE":
             data["municipio"] = ""
-            return 1
-        if code == "ARRENDAMIENTO":
+        elif code == "ARRENDAMIENTO":
             data["renta"] = ""
-            return 1
-        if code == "CONSTITUCION_SOCIEDAD":
+        elif code == "CONSTITUCION_SOCIEDAD":
             data["representante_legal"] = ""
-            return 1
-        if code == "DONACION_ENTRE_VIVOS":
+        elif code == "DONACION_ENTRE_VIVOS":
             data["bienes"] = ""
-            return 1
-        data["referencia_acta"] = ""
-        return 1
+        else:
+            data["referencia_acta"] = ""
+        return _expected(["RULE-001"], code)
     return 0
 
 
@@ -1017,6 +1064,7 @@ def run(reset: bool = False) -> None:
 
         refs = seed_reference_data(db)
         users = seed_users(db, refs["roles"])
+        seed_validation_rules(db)
         templates = seed_templates(db, refs["deed_types"], users)
         clients = seed_clients(db)
         cases = seed_cases_and_documents(db, refs["deed_types"], templates, users, clients)
@@ -1032,6 +1080,7 @@ def run(reset: bool = False) -> None:
         print(f"  Plantillas: {db.query(Template).count()}")
         print(f"  Documentos: {db.query(Document).count()}")
         print(f"  Casos de prueba: {db.query(TestCase).count()}")
+        print(f"  Reglas de validación: {db.query(ValidationRule).count()}")
         print(f"  Mediciones: {db.query(TimeMeasurement).count()}")
         print(f"  Administrador: {admin.username}")
     finally:

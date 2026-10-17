@@ -17,6 +17,7 @@ import LoginPage from '@/pages/LoginPage';
 import PaymentsPage from '@/pages/PaymentsPage';
 import QuotesPage from '@/pages/QuotesPage';
 import ReportsPage from '@/pages/ReportsPage';
+import RulesPage from '@/pages/RulesPage';
 import SettingsPage from '@/pages/SettingsPage';
 import TemplateDetailPage from '@/pages/TemplateDetailPage';
 import TemplatesPage from '@/pages/TemplatesPage';
@@ -59,6 +60,10 @@ export default function App() {
 
                 <Route element={<ProtectedRoute permission="users.read" />}>
                   <Route path="/users" element={<UsersPage />} />
+                </Route>
+
+                <Route element={<ProtectedRoute permission="rules.read" />}>
+                  <Route path="/rules" element={<RulesPage />} />
                 </Route>
               </Route>
             </Route>

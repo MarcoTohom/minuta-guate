@@ -80,6 +80,7 @@ VITE_API_URL=/api/v1
 | `/login` | Inicio de sesión |
 | `/dashboard` | Panel principal |
 | `/users` | Usuarios (requiere `users.read`) |
+| `/rules` | Reglas de validación y tipos de escritura (requiere `rules.read`) |
 | `/clients` | Clientes |
 | `/cases` | Expedientes |
 | `/templates` | Listado de plantillas |

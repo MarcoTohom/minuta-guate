@@ -136,3 +136,29 @@ export interface FieldTypesCatalogEntry {
   supports_calc: boolean;
   is_list: boolean;
 }
+
+/** Severidades de una regla de validación. */
+export type RuleSeverity = 'CRITICAL' | 'ERROR' | 'WARNING' | 'INFO';
+
+export const RULE_SEVERITIES: RuleSeverity[] = ['CRITICAL', 'ERROR', 'WARNING', 'INFO'];
+
+/** Regla de validación administrable (RULE-001 .. RULE-020). */
+export interface ValidationRule {
+  rule_id: string;
+  name: string;
+  description?: string | null;
+  severity: RuleSeverity | string;
+  active: boolean;
+  /** Tipos de escritura a los que aplica; `null` = todos. */
+  deed_type_codes?: string[] | null;
+  applies_to_all: boolean;
+  /** Alcance sugerido por el catálogo (para mostrar el valor recomendado). */
+  default_deed_type_codes?: string[] | null;
+}
+
+export interface ValidationRuleUpdate {
+  severity?: RuleSeverity | string;
+  active?: boolean;
+  /** `null` explícito significa "todos los tipos de escritura". */
+  deed_type_codes?: string[] | null;
+}
