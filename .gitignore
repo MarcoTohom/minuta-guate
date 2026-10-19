@@ -49,3 +49,6 @@ Desktop.ini
 .idea/
 .vscode/
 *.swp
+
+# MkDocs
+site/

@@ -1,0 +1,83 @@
+site_name: "Sistema de Borradores de Escrituras Públicas"
+site_description: "Documentación técnica, guías de instalación y referencia de API para el generador de borradores notariales."
+site_author: "Marco Lares"
+docs_dir: "docs"
+site_dir: "site"
+
+repo_name: "machotes"
+edit_uri: ""
+
+theme:
+  name: material
+  language: es
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Cambiar a modo oscuro
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Cambiar a modo claro
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [backend]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_toc_entry: false
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Inicio: index.md
+  - Arquitectura: architecture.md
+  - API REST: api.md
+  - Base de Datos: database.md
+  - Plantillas: templates.md
+  - Reglas de Validación: validation-rules.md
+  - Pruebas y Cobertura: testing.md
+  - Manual de Usuario: user-manual.md
+  - Instalación:
+      - Guía General: installation.md
+      - Ubuntu Linux: installation-ubuntu.md
+  - Plan de Documentación: plan-implementacion-documentacion.md
+  - Referencia de Código:
+      - Modelos y Esquemas: reference/models.md
+      - Servicios y Generador: reference/services.md
